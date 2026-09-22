@@ -1,0 +1,384 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>鬆鬆減重飲食紀錄器</title><style>
+  *{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background-color:#f0f4f8;padding:15px;color:#2d3748;max-width:420px;margin:0 auto;padding-bottom:75px}
+  .card{background:#fff;padding:18px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);margin-bottom:15px}
+  .profile-header{display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:15px}
+  .cat-avatar{width:70px;height:70px;border-radius:50%;object-fit:cover;box-shadow:0 3px 8px rgba(0,0,0,.12);border:2px solid #fff}
+  .header-text{text-align:left}
+  .header-text h2{color:#2b6cb0;margin:0 0 4px 0;font-size:19px;text-align:left}
+  .header-text .subtitle{margin-bottom:0;text-align:left}
+  .subtitle{font-size:13px;color:#4a5568;font-weight:bold}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;display:flex;border-top:1px solid #e2e8f0;box-shadow:0 -2px 10px rgba(0,0,0,.05);z-index:1000}
+  .nav-item{flex:1;text-align:center;padding:10px 0;font-size:11px;color:#718096;cursor:pointer;border:none;background:none}
+  .nav-item.active{color:#3182ce;font-weight:bold}
+  .nav-icon{font-size:18px;display:block;margin-bottom:2px}
+  .accordion-header{display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:14px;color:#2b6cb0;cursor:pointer;padding:4px 0}
+  .accordion-content{display:none;margin-top:12px;padding-top:10px;border-top:1px dashed #e2e8f0}
+  .accordion-content.open{display:block}
+  .item-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;background:#f7fafc;padding:8px 12px;border-radius:10px}
+  .item-label{font-weight:bold;font-size:14px;flex-grow:1}
+  .item-unit{font-size:11px;color:#a0aec0;margin-left:4px}
+  .control-group{display:flex;align-items:center;gap:8px}
+  .btn-qty{width:32px;height:32px;border-radius:50%;border:none;background:#cbd5e0;font-weight:bold;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  .btn-qty:active{background:#a0aec0}
+  input[type="number"],input[type="text"]{width:55px;height:32px;padding:0;border:1px solid #cbd5e0;border-radius:8px;text-align:center;font-size:15px;font-weight:bold;box-sizing:border-box;appearance:textfield}
+  .result-box{background:linear-gradient(135deg,#ebf8ff 0%,#e6fffa 100%);border:1px solid #bee3f8;padding:15px;border-radius:12px;text-align:center}
+  .highlight{font-size:24px;font-weight:bold;color:#2b6cb0;margin:3px 0}
+  .btn-main{width:100%;padding:14px;background-color:#3182ce;border:none;border-radius:12px;font-weight:bold;color:#fff;font-size:15px;cursor:pointer;margin-top:15px;box-shadow:0 4px 10px rgba(49,130,206,.25);touch-action:manipulation}
+  .btn-main:active{background-color:#2b6cb0}
+  .tool-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:10px}
+  .tool-input{width:75px!important;font-size:13px!important;padding:2px!important}
+  .history-list{font-size:12px;color:#4a5568;max-height:150px;overflow-y:auto}
+  .history-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #e2e8f0}
+  .stat-container{text-align:center;font-size:13px;color:#4a5568;line-height:1.6}
+  .stat-row-1{margin-bottom:3px}
+  .stat-row-2{font-weight:bold;color:#2b6cb0;margin-top:2px}
+</style></head><body>
+<div id="tab1" class="tab-content active">
+  <div class="card">
+    <div class="profile-header">
+      <!-- ⚠️ 請將下方的 YOUR_CAT_IMAGE_URL 替換成你的圖片網址 -->
+      <img src="https://i.meee.com.tw/Xh4ASqT.png" alt="鬆鬆照片" class="cat-avatar">
+      <div class="header-text">
+        <h2>🐱 鬆鬆每日紀錄</h2>
+        <div class="subtitle">目標熱量：<b id="displayTargetKcal">190</b> kcal</div>
+      </div>
+    </div>
+        <div class="accordion-header" onclick="toggleAccordion()">
+      <span>🍬 今日點心列表</span>
+      <span id="accordionIcon" style="font-size:12px;color:#718096">點擊展開 ▾</span>
+    </div>
+    <div class="accordion-content" id="snackAccordion">
+      <div id="items-container"></div>
+    </div>
+  </div>
+  <div class="card result-box">
+    <div class="stat-container">
+      <div class="stat-row-1">
+        今日飼料：<b id="foodKcalDisplay">0.0</b> kcal &nbsp;|&nbsp; 今日點心：<b id="snackKcal">0.0</b> kcal
+      </div>
+      <div class="stat-row-2">
+        👉 剩餘額度：<b id="remainKcal">190.0</b> kcal
+      </div>
+    </div>
+    <hr style="border:0;border-top:1px dashed #cbd5e0;margin:10px 0">
+    <div style="font-size:13px;font-weight:bold;color:#4a5568">👉 今日 <span id="displayFoodNameResult">SAT34</span> 建議總投糧：</div>
+    <div class="highlight"><span id="foodGram">62.5</span> 克 (約 <span id="feederPortions">10.4</span> 份)</div>
+    
+    <!-- 💧 新增：今日飲水量紀錄區塊 -->
+    <div style="background:#fff;padding:10px;border-radius:10px;margin-top:10px;border:1px solid #e2e8f0">
+      <div style="font-size:13px;font-weight:bold;color:#3182ce;margin-bottom:6px">💧 今日飲水量：</div>
+      <div class="control-group" style="justify-content:center">
+        <button class="btn-qty" onclick="changeWater(-10)">-</button>
+        <input type="number" id="actualWater" value="0" step="5" oninput="updateWaterInput()">
+        <button class="btn-qty" onclick="changeWater(10)">+</button>
+        <span style="font-size:13px;font-weight:bold;color:#4a5568">ml</span>
+      </div>
+    </div>
+
+    <!-- 🤖 今日餵食機已出糧份數區塊 -->
+    <div style="background:#fff;padding:10px;border-radius:10px;margin-top:10px;border:1px solid #e2e8f0">
+      <div style="font-size:13px;font-weight:bold;color:#2b6cb0;margin-bottom:6px">🤖 今日餵食機已出糧份數：</div>
+      <div class="control-group" style="justify-content:center">
+        <button class="btn-qty" onclick="changePortion(-1)">-</button>
+        <input type="number" id="actualPortions" value="0" step="0.5" oninput="calculate()">
+        <button class="btn-qty" onclick="changePortion(1)">+</button>
+        <span style="font-size:13px;font-weight:bold;color:#4a5568">份</span>
+      </div>
+      <div style="font-size:12px;color:#718096;margin-top:6px">
+        等於換算：<b id="actualGramDisplay">0.0</b> 克 | 剩餘可餵：<b id="remainPortionsDisplay">10.4</b> 份
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:13px;font-weight:bold;color:#4a5568">📊 預計今日熱量盈虧：<span id="diffKcalDisplay" style="font-size:15px;color:#3182ce">0 kcal</span></div>
+    <button class="btn-main" onclick="saveDay()">🗓️ 結算今天並開啟新一天</button>
+  </div>
+  <div class="card">
+    <div style="font-weight:bold;font-size:14px;margin-bottom:8px;display:flex;justify-content:space-between">
+      <span>📜 近期歷史紀錄</span>
+      <span style="font-size:11px;color:#e53e3e;cursor:pointer" onclick="clearHistory()">清除紀錄</span>
+    </div>
+    <div class="history-list" id="historyList">尚無紀錄</div>
+  </div>
+</div>
+<div id="tab2" class="tab-content">
+  <h2>⚙️ 貓咪與飼料參數設定</h2>
+  <div class="card">
+    <div style="font-weight:bold;font-size:14px;color:#2b6cb0;margin-bottom:8px">1. 體重與熱量目標</div>
+    <div class="tool-row"><span>鬆鬆目前體重 (kg)：</span><input type="number" id="catWeight" value="6.7" step="0.1" class="tool-input" oninput="updateCatProfile()"></div>
+    <div class="tool-row"><span>RER (公式自動計算)：</span><input type="number" id="catRer" value="291" class="tool-input" oninput="updateCatProfileManualRer()"></div>
+    <div class="tool-row"><span>醫囑 DER 係數：</span><input type="number" id="catDer" value="0.65" step="0.01" class="tool-input" oninput="updateCatProfile()"></div>
+    <div style="font-size:12px;color:#2b6cb0;font-weight:bold;text-align:right">👉 計算出目標熱量：<span id="calcTargetKcal">190</span> kcal</div>
+  </div>
+  <div class="card">
+    <div style="font-weight:bold;font-size:14px;color:#2f855a;margin-bottom:8px">2. 飼料與餵食機設定</div>
+    <div class="tool-row"><span>目前飼料名稱：</span><input type="text" id="foodName" value="皇家 SAT34" style="width:100px!important;font-size:12px" oninput="updateCatProfile()"></div>
+    <div class="tool-row"><span>飼料代謝能 (kcal/100g)：</span><input type="number" id="foodKcal100g" value="304" class="tool-input" oninput="updateCatProfile()"></div>
+    <div class="tool-row"><span>實測 1 份出糧約幾克 (g)：</span><input type="number" id="feederPerPortion" value="6" step="0.1" class="tool-input" oninput="updateCatProfile()"></div>
+  </div>
+  <div class="card">
+    <div style="font-weight:bold;font-size:14px;color:#d69e2e;margin-bottom:10px">3. 點心單價熱量自訂</div>
+    <div id="settings-container"></div>
+  </div>
+</div>
+<div id="tab3" class="tab-content">
+  <div class="card">
+    <h2>💡 凍乾單顆熱量算盤</h2>
+    <div class="subtitle">輸入包裝標示，快速估算 1 顆凍乾卡路里</div>
+    <div class="tool-row"><span>整罐/包總重量 (g)：</span><input type="number" id="fdTotalG" value="70" class="tool-input" oninput="calcFdSingle()"></div>
+    <div class="tool-row"><span>整罐/包總熱量 (kcal)：</span><input type="number" id="fdTotalKcal" value="293" class="tool-input" oninput="calcFdSingle()"></div>
+    <div class="tool-row"><span>估計 1 顆重量 (g)：</span><input type="number" id="fdSingleG" value="0.8" step="0.1" class="tool-input" oninput="calcFdSingle()"></div>
+    <hr style="border:0;border-top:1px dashed #feebc8;margin:15px 0">
+    <div style="text-align:center;font-size:15px;font-weight:bold;color:#c05621">👉 估算單顆凍乾：<span id="fdSingleResult" style="font-size:22px">3.3</span> kcal</div>
+    <button class="btn-main" style="background-color:#dd6b20" onclick="applyFdKcal()">帶入首頁「凍乾」設定</button>
+  </div>
+</div>
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab(1)"><span class="nav-icon">📝</span>紀錄</button>
+  <button class="nav-item" onclick="switchTab(2)"><span class="nav-icon">⚙️</span>設定</button>
+  <button class="nav-item" onclick="switchTab(3)"><span class="nav-icon">💡</span>凍乾算盤</button>
+</div>
+<script>
+let defaultConfig=[{id:'treat',name:'肉泥',kcal:10,unit:'條'},{id:'freezeDried',name:'凍乾',kcal:3.3,unit:'顆'},{id:'canSide',name:'副食罐',kcal:40,unit:'罐'},{id:'canMain',name:'主食罐',kcal:80,unit:'罐'}];
+let catProfile=JSON.parse(localStorage.getItem('songsong_profile'))||{weight:6.7,rer:291,der:0.65,targetKcal:190,foodName:'皇家 SAT34',foodKcal100g:304,feederPortionG:6};
+let config=JSON.parse(localStorage.getItem('songsong_config'))||defaultConfig;
+let todayData=JSON.parse(localStorage.getItem('songsong_today'))||{treat:0,freezeDried:0,canSide:0,canMain:0,portions:0,waterMl:0};
+let historyData=JSON.parse(localStorage.getItem('songsong_history'))||[];
+
+function toggleAccordion(){
+  const content=document.getElementById('snackAccordion');
+  const icon=document.getElementById('accordionIcon');
+  if(content.classList.contains('open')){
+    content.classList.remove('open');
+    icon.innerText='點擊展開 ▾';
+  }else{
+    content.classList.add('open');
+    icon.innerText='點擊收合 ▴';
+  }
+}
+function initProfileInputs(){
+  document.getElementById('catWeight').value=catProfile.weight;
+  document.getElementById('catRer').value=catProfile.rer;
+  document.getElementById('catDer').value=catProfile.der;
+  document.getElementById('foodName').value=catProfile.foodName;
+  document.getElementById('foodKcal100g').value=catProfile.foodKcal100g;
+  document.getElementById('feederPerPortion').value=catProfile.feederPortionG;
+  updateCatProfileDisplay();
+}
+function updateCatProfile(){
+  catProfile.weight=parseFloat(document.getElementById('catWeight').value)||0;
+  catProfile.der=parseFloat(document.getElementById('catDer').value)||0;
+  catProfile.foodName=document.getElementById('foodName').value||'飼料';
+  catProfile.foodKcal100g=parseFloat(document.getElementById('foodKcal100g').value)||300;
+  catProfile.feederPortionG=parseFloat(document.getElementById('feederPerPortion').value)||1;
+  if(catProfile.weight>0){catProfile.rer=Math.round(70*Math.pow(catProfile.weight,0.75));document.getElementById('catRer').value=catProfile.rer}
+  catProfile.targetKcal=Math.round(catProfile.rer*catProfile.der);
+  localStorage.setItem('songsong_profile',JSON.stringify(catProfile));
+  updateCatProfileDisplay();
+  calculate();
+}
+function updateCatProfileManualRer(){
+  catProfile.rer=parseFloat(document.getElementById('catRer').value)||0;
+  catProfile.targetKcal=Math.round(catProfile.rer*catProfile.der);
+  localStorage.setItem('songsong_profile',JSON.stringify(catProfile));
+  updateCatProfileDisplay();
+  calculate();
+}
+function updateCatProfileDisplay(){
+  document.getElementById('calcTargetKcal').innerText=catProfile.targetKcal;
+  document.getElementById('displayTargetKcal').innerText=catProfile.targetKcal;
+  document.getElementById('displayFoodNameResult').innerText=catProfile.foodName;
+}
+function switchTab(tabIndex){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`tab${tabIndex}`).classList.add('active');
+  document.querySelectorAll('.nav-item')[tabIndex-1].classList.add('active');
+}
+function renderItems(){
+  const container=document.getElementById('items-container');
+  const settingsContainer=document.getElementById('settings-container');
+  container.innerHTML='';
+  settingsContainer.innerHTML='';
+  config.forEach(item=>{
+    const qty=todayData[item.id]||0;
+    container.innerHTML+=`<div class="item-row"><div class="item-label">${item.name} <span class="item-unit">(${item.kcal}kcal/${item.unit})</span></div><div class="control-group"><button class="btn-qty" onclick="changeQty('${item.id}', -1)">-</button><input type="number" id="input-${item.id}" value="${qty}" readonly><button class="btn-qty" onclick="changeQty('${item.id}', 1)">+</button></div></div>`;
+    settingsContainer.innerHTML+=`<div class="tool-row"><span>${item.name} 熱量 (${item.unit})：</span><div><input type="number" value="${item.kcal}" class="tool-input" onchange="editKcalDirect('${item.id}', this.value)"> kcal</div></div>`;
+  });
+  document.getElementById('actualPortions').value=todayData.portions||0;
+  document.getElementById('actualWater').value=todayData.waterMl||0;
+  calculate();
+}
+function changeQty(id,delta){
+  let current=todayData[id]||0;
+  let updated=Math.max(0,current+delta);
+  todayData[id]=updated;
+  document.getElementById(`input-${id}`).value=updated;
+  saveToday();
+  calculate();
+}
+function changePortion(delta){
+  let current=parseFloat(document.getElementById('actualPortions').value)||0;
+  let updated=Math.max(0,current+delta);
+  document.getElementById('actualPortions').value=updated;
+  todayData.portions=updated;
+  saveToday();
+  calculate();
+}
+function changeWater(delta){
+  let current=parseFloat(document.getElementById('actualWater').value)||0;
+  let updated=Math.max(0,current+delta);
+  document.getElementById('actualWater').value=updated;
+  todayData.waterMl=updated;
+  saveToday();
+}
+function updateWaterInput(){
+  let current=parseFloat(document.getElementById('actualWater').value)||0;
+  todayData.waterMl=Math.max(0,current);
+  saveToday();
+}
+function editKcalDirect(id,newVal){
+  let item=config.find(c=>c.id===id);
+  if(item&&newVal>0){item.kcal=parseFloat(newVal);localStorage.setItem('songsong_config',JSON.stringify(config));renderItems()}
+}
+function calcFdSingle(){
+  let g=parseFloat(document.getElementById('fdTotalG').value)||0;
+  let kcal=parseFloat(document.getElementById('fdTotalKcal').value)||0;
+  let singleG=parseFloat(document.getElementById('fdSingleG').value)||0;
+  if(g>0&&kcal>0&&singleG>0){
+    let singleKcal=((kcal/g)*singleG).toFixed(1);
+    document.getElementById('fdSingleResult').innerText=singleKcal;
+  }
+}
+function applyFdKcal(){
+  let singleKcal=parseFloat(document.getElementById('fdSingleResult').innerText);
+  let item=config.find(c=>c.id==='freezeDried');
+  if(item&&singleKcal>0){
+    item.kcal=singleKcal;
+    localStorage.setItem('songsong_config',JSON.stringify(config));
+    renderItems();
+    alert(`已將凍乾單顆熱量更新為 ${singleKcal} kcal！`);
+    switchTab(1);
+  }
+}
+function calculate(){
+  let totalSnackKcal=0;
+  config.forEach(item=>{
+    let qty=todayData[item.id]||0;
+    totalSnackKcal+=qty*item.kcal;
+  });
+  let targetKcal=catProfile.targetKcal||190;
+  let foodDensity=(catProfile.foodKcal100g/100)||3.04;
+  let remainKcal=Math.max(0,targetKcal-totalSnackKcal);
+  let foodGram=(remainKcal/foodDensity).toFixed(1);
+  let portions=catProfile.feederPortionG>0?(foodGram/catProfile.feederPortionG).toFixed(1):0;
+
+  document.getElementById('snackKcal').innerText=totalSnackKcal.toFixed(1);
+  document.getElementById('remainKcal').innerText=remainKcal.toFixed(1);
+  document.getElementById('foodGram').innerText=foodGram;
+  document.getElementById('feederPortions').innerText=portions;
+
+  let actualPortions=parseFloat(document.getElementById('actualPortions').value)||0;
+  todayData.portions=actualPortions;
+  saveToday();
+
+  let actualFoodGram=(actualPortions*(catProfile.feederPortionG||6)).toFixed(1);
+  let actualFoodKcal=(actualFoodGram*foodDensity).toFixed(1);
+  document.getElementById('foodKcalDisplay').innerText=actualFoodKcal;
+  document.getElementById('actualGramDisplay').innerText=actualFoodGram;
+
+  let remainPortions=(portions-actualPortions).toFixed(1);
+  document.getElementById('remainPortionsDisplay').innerText=remainPortions;
+
+  let actualTotalKcal=(totalSnackKcal+parseFloat(actualFoodKcal));
+  let diffKcal=(actualTotalKcal-targetKcal).toFixed(1);
+  let diffDisplay=document.getElementById('diffKcalDisplay');
+
+  if(diffKcal>0){
+    diffDisplay.innerText=`+${diffKcal} kcal (超標)`;
+    diffDisplay.style.color='#e53e3e';
+  }else if(diffKcal==0){
+    diffDisplay.innerText=`0 kcal (完美符合)`;
+    diffDisplay.style.color='#319795';
+  }else{
+    diffDisplay.innerText=`${diffKcal} kcal (未達目標)`;
+    diffDisplay.style.color='#3182ce';
+  }
+}
+function saveToday(){
+  localStorage.setItem('songsong_today',JSON.stringify(todayData));
+}
+function saveDay(){
+  let totalSnackKcal=0;
+  let snackDetails=[];
+  config.forEach(item=>{
+    let qty=todayData[item.id]||0;
+    if(qty>0){
+      totalSnackKcal+=qty*item.kcal;
+      snackDetails.push(`${item.name}x${qty}`);
+    }
+  });
+
+  let snackDetailStr=snackDetails.length>0?snackDetails.join(', '):'無點心';
+  let targetKcal=catProfile.targetKcal||190;
+  let foodDensity=(catProfile.foodKcal100g/100)||3.04;
+
+  let actualPortions=parseFloat(document.getElementById('actualPortions').value)||0;
+  let actualFoodGram=(actualPortions*(catProfile.feederPortionG||6)).toFixed(1);
+  let actualFoodKcal=(actualFoodGram*foodDensity).toFixed(1);
+
+  let actualTotalKcal=(totalSnackKcal+parseFloat(actualFoodKcal)).toFixed(1);
+  let diffVal=(actualTotalKcal-targetKcal).toFixed(1);
+  let diffKcalStr=diffVal>0?`+${diffVal}`:`${diffVal}`;
+
+  let waterMl=parseFloat(document.getElementById('actualWater').value)||0;
+
+  let todayStr=new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'});
+
+  let payload={
+    date:todayStr,
+    weight:catProfile.weight,
+    der:catProfile.der,
+    targetKcal:targetKcal,
+    foodName:catProfile.foodName,
+    actualFoodGram:actualFoodGram,
+    foodKcal:actualFoodKcal,
+    snackDetail:snackDetailStr,
+    snackKcal:totalSnackKcal.toFixed(1),
+    actualTotalKcal:actualTotalKcal,
+    diffKcal:diffKcalStr,
+    waterMl:waterMl // 新增傳送飲水量
+  };
+
+  let params=new URLSearchParams(payload).toString()+'&_t='+new Date().getTime();
+  let baseUrl='https://script.google.com/macros/s/AKfycbzxEvokTJZBz34NSYr1Owrt9I4iyM0NLHJkvCLEXEYLTCuEe9UHcs8eTIYTdk0iBbx2/exec';
+
+  let img = new Image();
+  img.src = baseUrl + '?' + params;
+
+  historyData.unshift({date:todayStr,snack:totalSnackKcal.toFixed(1),food:actualFoodGram,water:waterMl,actualKcal:actualTotalKcal});
+  if(historyData.length>10)historyData.pop();
+  localStorage.setItem('songsong_history',JSON.stringify(historyData));
+
+  todayData={treat:0,freezeDried:0,canSide:0,canMain:0,portions:0,waterMl:0};
+  saveToday();
+  renderItems();
+  renderHistory();
+
+  alert(`今天的紀錄已存檔並自動同步至 Google Sheet！\n實際投糧：${actualPortions} 份 (${actualFoodGram}g = ${actualFoodKcal}kcal)\n今日飲水：${waterMl} ml\n總攝取：${actualTotalKcal} kcal (盈虧: ${diffKcalStr} kcal)`);
+}
+function renderHistory(){
+  const list=document.getElementById('historyList');
+  if(historyData.length===0){list.innerHTML='尚無紀錄';return}
+  list.innerHTML=historyData.map(h=>`<div class="history-item"><span><b>${h.date}</b></span><span>水: ${h.water||0}ml</span><span>點心: ${h.snack} kcal</span><span>實吃: <b>${h.food}g</b></span></div>`).join('');
+}
+function clearHistory(){
+  if(confirm('確定要清除所有歷史紀錄嗎？')){
+    historyData=[];
+    localStorage.removeItem('songsong_history');
+    renderHistory();
+  }
+}
+initProfileInputs();renderItems();renderHistory();calcFdSingle();
+</script></body></html>
